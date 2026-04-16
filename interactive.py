@@ -84,6 +84,7 @@ class ShorTalk(Slide):
         self.title()
         self.QuantumIntro()
         self.QubitBasic()
+        self.QuantumSpeedup()
         self.Why2n()
         self.GroverProblem()
         self.GroverIteration()
@@ -93,8 +94,8 @@ class ShorTalk(Slide):
         self.FactoringTrickExample()
         self.ShorFindOrder()
         self.ShorSteps()
-        self.ShorCaveats()
         self.ShorRecover()
+        self.ShorCaveats()
         self.end()
 
         # ----- slides -----
@@ -124,7 +125,7 @@ class ShorTalk(Slide):
         ).arrange(DOWN, aligned_edge=LEFT, buff=0.4).move_to(LEFT * 3)
 
         # Image from path "gg"
-        cat_img = ImageMobject("image.png").scale(1.2).to_edge(RIGHT, buff=1.5).shift(UP * 0.5)
+        cat_img = ImageMobject("image.png").scale(0.7).to_edge(RIGHT, buff=1.5)
         
         # Quote block
         quote = Paragraph(
@@ -136,7 +137,7 @@ class ShorTalk(Slide):
             font_size=20,
             color=C_MUTED,
             slant=ITALIC
-        ).next_to(cat_img, DOWN, buff=0.4)
+        ).next_to(cat_img, DOWN, buff=0.1)
         
         author = th("- Mahesh Shenoy", size=16, color=C_ACCENT).next_to(quote, DOWN, aligned_edge=RIGHT)
 
@@ -283,9 +284,11 @@ class ShorTalk(Slide):
         self.play(FadeOut(title), FadeOut(sub))
 
     def QubitBasic(self):
+        header = th("Quantum State")
+        header.to_edge(UP,buff=0.2)
         analogy = th("นึกภาพเหรียญที่กำลังหมุน ไม่ใช่ทั้งหัว ไม่ใช่ทั้งก้อย", size=24, color=C_MUTED)
-        analogy.to_edge(UP, buff=1.0)
-        self.play(FadeIn(analogy), run_time=0.1)
+        analogy.next_to(header,DOWN, buff=0.2)
+        self.play(FadeIn(header),FadeIn(analogy), run_time=0.1)
 
         # Left: arrow-on-circle diagram
         axes_center = content_center(x=-3.2, dy=-0.6)
@@ -397,166 +400,122 @@ class ShorTalk(Slide):
                 state_arrow.animate.put_start_and_end_on(axes_center, target),
                 run_time=0.35,
             )
+        all_qubit_elements = Group(
+            header, analogy, 
+            x_axis, y_axis, lbl0, lbl1, circle, # Axes & Circle
+            state_arrow, state_lbl,              # The Vector
+            proj_x, proj_y, alpha_seg, beta_seg, a_lbl, b_lbl, # Projections
+            right_panel, ask, probs              # Equations & Text
+        )
+        self.play(FadeOut(all_qubit_elements))
+        
 
     def QuantumSpeedup(self):
-        # ------ Classical Section: Sequential ------
-        # Shifted dy to 2.5 to make room for the punchline at the bottom
+        # 1. SETUP ELEMENTS (เหมือนเดิมแต่รวบรวมไว้เพื่อจัดการง่าย)
         c_label = th("Classical: ต้องทำทีละค่า (Iterative)", size=20, color=C_MUTED)
         c_label.move_to(content_center(x=-3.5, dy=2.5))
-
         c_box = RoundedRectangle(height=3, width=2.5, color=C_MUTED)
         c_box.next_to(c_label, DOWN, buff=0.2)
-
-        # Create tasks and immediately center them to the box
-        c_tasks = VGroup(
-            *[MathTex(f"f({i})", color=WHITE).scale(0.6) for i in range(6)]
-        )
+        c_tasks = VGroup(*[MathTex(f"f({i})", color=WHITE).scale(0.6) for i in range(6)])
+        c_tasks[4] = MathTex("...", color=WHITE).scale(0.6)
         c_tasks[5] = MathTex("f(15)", color=WHITE).scale(0.6)
-        c_tasks.arrange_in_grid(rows=3, cols=2, buff=0.2)
-        c_tasks.move_to(c_box.get_center())  # Centering inside the box
+        c_tasks.arrange_in_grid(rows=3, cols=2, buff=0.2).move_to(c_box.get_center())
 
-        # self.play(Create(c_box), FadeIn(c_label))
-
-        # # Animate sequential processing
-        # for i in [0, 1, 2, 3, 4, 5]:
-        #     target = c_tasks[i]
-        #     if i == 4:
-        #         dots = th("...", size=20).move_to(target)
-        #         self.play(Write(dots), run_time=0.15)
-        #         continue
-
-        #     highlight = Square(side_length=0.4, color=C_POS).move_to(target)
-
-        #     self.play(Create(highlight), run_time=0.15)
-        #     self.play(FadeOut(highlight), target.animate.set_color(C_POS), run_time=0.15)
-
-        # ------ Quantum Section: Parallel ------
-        # Match dy=2.5 for symmetry
         q_label = th("Quantum: ทำงานบนทุก Qubit พร้อมกัน", size=20, color=C_ACCENT)
         q_label.move_to(content_center(x=3.5, dy=2.5))
-
-        psi_state = MathTex(
-            r"|\psi\rangle = \sum_{i=0}^{15} \alpha_i |i\rangle", color=WHITE
-        ).scale(0.8)
+        psi_state = MathTex(r"|\psi\rangle = \sum_{i=0}^{15} \alpha_i |i\rangle", color=WHITE).scale(0.8)
         psi_state.next_to(q_label, DOWN, buff=0.4)
-
         gate_u = Square(side_length=1.1, color=C_ACCENT)
         gate_u.add(MathTex("U", color=C_ACCENT))
         gate_u.next_to(psi_state, DOWN, buff=0.6)
-
-        arrow_in = Arrow(
-            psi_state.get_bottom(), gate_u.get_top(), color=C_MUTED, buff=0.1
-        )
-
-        # self.play(FadeIn(q_label), Write(psi_state))
-        # self.play(GrowArrow(arrow_in), Create(gate_u))
-
+        arrow_in = Arrow(psi_state.get_bottom(), gate_u.get_top(), color=C_MUTED, buff=0.1)
         res_text = th("1 Operation on 4 Qubits", size=18, color=C_POS)
         res_text.next_to(gate_u, DOWN, buff=0.3)
-
         impact = th("กระทบทั้ง 16 states ทันที!", size=22, color=C_POS, weight=BOLD)
         impact.next_to(res_text, DOWN, buff=0.2)
 
-        q_group = VGroup(q_label, psi_state, gate_u, arrow_in, res_text, impact)
-
-        # 2. Start the show: Create both containers/labels at once
+        # 2. ANIMATION STAGE 1: Setup
         self.play(
             Create(c_box),
             FadeIn(c_label),
             FadeIn(q_label),
             Write(psi_state),
-            run_time=1,
         )
+        self.next_slide() # หยุดเพื่อให้คนดูเห็นความต่างของ Initial State ก่อนเริ่มรัน
 
-        # 3. Create the concurrent animation logic
-        # We will trigger the Quantum Gate and Arrow while the loop runs
-
+        # 3. ANIMATION STAGE 2: Processing Loop
         for i in range(6):
             target = c_tasks[i]
-
-            # Prepare animations for this iteration
             anis = []
+            highlight = Square(side_length=0.4, color=C_POS).move_to(target)
+            anis.append(Succession(
+                Create(highlight, run_time=0.1),
+                AnimationGroup(FadeOut(highlight), target.animate.set_color(C_POS), run_time=0.1)
+            ))
 
-            if i == 4:
-                dots = th("...", size=20).move_to(target)
-                anis.append(Write(dots))
-            else:
-                highlight = Square(side_length=0.4, color=C_POS).move_to(target)
-                # Successive animation for the classical bit
-                anis.append(
-                    Succession(
-                        Create(highlight, run_time=0.1),
-                        AnimationGroup(
-                            FadeOut(highlight),
-                            target.animate.set_color(C_POS),
-                            run_time=0.1,
-                        ),
-                    )
-                )
-
-            # --- Inject Quantum animations at specific loop indexes ---
-            if i == 0:
-                anis.append(GrowArrow(arrow_in))
-            if i == 1:
-                anis.append(Create(gate_u))
-            if i == 2:
+            # Quantum milestones during loop
+            if i == 0: anis.append(GrowArrow(arrow_in))
+            if i == 1: anis.append(Create(gate_u))
+            if i == 2: 
                 anis.append(gate_u.animate.set_fill(C_ACCENT, opacity=0.3))
                 anis.append(Write(res_text))
-            if i == 3:
+            if i == 3: 
                 anis.append(Indicate(psi_state, color=C_POS))
                 anis.append(FadeIn(impact))
 
-            # Play everything assigned to this step together
             self.play(*anis, run_time=0.4)
 
-        # self.play(gate_u.animate.set_fill(C_ACCENT, opacity=0.3), Write(res_text))
-        # self.play(Indicate(psi_state, color=C_POS), FadeIn(impact))
-        # self.next_slide()
+        self.next_slide() # หยุดดูผลลัพธ์ที่ฝั่งหนึ่งเสร็จหมดแล้ว แต่อีกฝั่งเพิ่งเริ่ม
 
-        # ------ Final Comparison Punchline ------
-        # Positioned closer to the bottom edge to avoid overlap
+        # 4. ANIMATION STAGE 3: Punchline
         summary = VGroup(
             th("Classical: O(2ⁿ) steps", size=24, color=C_MUTED),
             MathTex(r"\longleftrightarrow", color=WHITE),
             th("Quantum: O(n) step (Quantum Parallelism)", size=24, color=C_POS),
-        ).arrange(RIGHT, buff=0.5)
-        summary.to_edge(DOWN, buff=0.6)
+        ).arrange(RIGHT, buff=0.5).to_edge(DOWN, buff=0.6)
 
-        # Visual divider to separate summary from the demonstration
-        divider = Line(LEFT * 6, RIGHT * 6, color=C_MUTED, stroke_width=1).next_to(
-            summary, UP, buff=0.4
-        )
+        divider = Line(LEFT * 6, RIGHT * 6, color=C_MUTED, stroke_width=1).next_to(summary, UP, buff=0.4)
 
         self.play(Create(divider), Write(summary))
-        self.next_slide()
+        self.next_slide() # จบ Slide นี้อย่างสมบูรณ์
+
+        # 5. CLEAR SCENE
+        # รวบรวมทุกอย่างที่สร้างขึ้นมาเพื่อล้างหน้าจอ
+        clear = Group(
+            c_label, c_box, c_tasks,               # Classical Section
+            q_label, psi_state, gate_u, arrow_in,  # Quantum Section
+            res_text, impact,                      # Results & Impact
+            divider, summary                       # Summary elements
+        )
+        self.play(
+            FadeOut(clear)
+        )
 
     def Why2n(self):
+        # 1. SETUP HEADER
         setup = th("n classical bits กับ n qubits ต่างกันยังไง?", size=26, color=C_MUTED)
-        setup.to_edge(UP, buff=1.5)
+        setup.to_edge(UP, buff=0.2) # ขยับขึ้นเล็กน้อยเพื่อให้มีพื้นที่ด้านล่าง
         self.play(FadeIn(setup))
 
         configs = ["00", "01", "10", "11"]
 
-        # ------ Classical panel ------
+        # ------ 2. CLASSICAL PANEL ------
         c_title = th("2 classical bits", size=22, color=C_MUTED)
-        c_rows = VGroup()
-        for cfg in configs:
-            row = MathTex(cfg, color=WHITE).scale(0.75)
-            c_rows.add(row)
+        c_rows = VGroup(*[MathTex(cfg, color=WHITE).scale(0.75) for cfg in configs])
         c_rows.arrange(DOWN, buff=0.15)
+        
         c_panel = VGroup(c_title, c_rows).arrange(DOWN, buff=0.25)
         c_panel.move_to(content_center(x=-3.5, dy=1.1))
-        self.play(FadeIn(c_panel))
-
-        highlight = SurroundingRectangle(
-            c_rows[2], color=C_ACCENT, buff=0.08, stroke_width=3
-        )
+        
+        highlight = SurroundingRectangle(c_rows[2], color=C_ACCENT, buff=0.08, stroke_width=3)
         c_note = th("อยู่ที่เดียวในเวลาเดียว", size=18, color=C_MUTED)
         c_note.next_to(c_panel, DOWN, buff=0.25)
-        self.play(Create(highlight), FadeIn(c_note))
-        self.next_slide()
 
-        # ------ Quantum panel ------
+        self.play(FadeIn(c_panel))
+        self.play(Create(highlight), FadeIn(c_note))
+        self.next_slide() # --- หยุดเพื่อให้เห็นว่า Classical เลือกได้แค่ 1 จาก 4 ---
+
+        # ------ 3. QUANTUM PANEL ------
         q_title = th("2 qubits", size=22, color=C_ACCENT)
         q_rows = VGroup()
         amp_labels = [r"\alpha_{00}", r"\alpha_{01}", r"\alpha_{10}", r"\alpha_{11}"]
@@ -567,83 +526,130 @@ class ShorTalk(Slide):
             row = VGroup(lhs, arrow, rhs).arrange(RIGHT, buff=0.15)
             q_rows.add(row)
         q_rows.arrange(DOWN, buff=0.15, aligned_edge=LEFT)
+        
         q_panel = VGroup(q_title, q_rows).arrange(DOWN, buff=0.25)
         q_panel.move_to(content_center(x=3.2, dy=1.1))
-        self.play(FadeIn(q_panel))
 
         q_note = VGroup(
-            th(
-                "แต่ละ state เก็บข้อมูลด้วยจำนวนเชิงซ้อนทำให้เกิดการแทรกสอดได้",
-                size=18,
-                color=C_MUTED,
-            ),
-            MathTex(r"|\alpha_{cfg}|^2 = P(\text{collapse}\to cfg)", color=C_POS).scale(
-                0.65
-            ),
-            th(
-                "เป็นไปได้หลายอย่างในเวลาเดียวกัน",
-                size=18,
-                color=C_MUTED,
-            ),
-        ).arrange(DOWN, buff=0.1)
+            th("แต่ละ state เก็บข้อมูลด้วยจำนวนเชิงซ้อนทำให้เกิดการแทรกสอดได้", size=18, color=C_MUTED),
+            MathTex(r"|\alpha_{cfg}|^2 = P(\text{collapse}\to cfg)", color=C_POS).scale(0.65),
+            th("เป็นไปได้หลายอย่างในเวลาเดียวกัน", size=18, color=C_MUTED),
+        ).arrange(DOWN, buff=0.15)
         q_note.next_to(q_panel, DOWN, buff=0.25)
+
+        self.play(FadeIn(q_panel))
         self.play(Write(q_note))
+        self.next_slide() # --- หยุดเพื่อเปรียบเทียบ Classical vs Quantum ---
+
+        # ------ 4. PUNCHLINE (The Why) ------
+        punch = VGroup(
+            th("50 qubits → 2⁵⁰ ≈ 10¹⁵ amplitudes", size=24, color=C_POS, weight=BOLD),
+            th("classical จำลองไม่ไหว (ใช้ RAM มหาศาล)", size=22, color=C_MUTED),
+        ).arrange(DOWN, buff=0.15)
+        punch.to_edge(DOWN, buff=0.6)
+
+        self.play(Write(punch))
+        self.play(Indicate(punch[0], color=C_POS)) # เน้นย้ำตัวเลขมหาศาล
         self.next_slide()
 
-        punch = VGroup(
-            th("50 qubits → 2⁵⁰ ≈ 10¹⁵ amplitude", size=24, color=C_POS, weight=BOLD),
-            th("classical จำลองไม่ไหว", size=22, color=C_MUTED),
-        ).arrange(DOWN, buff=0.1)
-        punch.to_edge(DOWN, buff=0.4)
-        self.play(Write(punch))
-        self.next_slide()
+        # ------ 5. CLEAR SCENE ------
+        # รวบรวมทุกอย่างเป็น Group เพื่อล้างหน้าจอให้สะอาด
+        all_elements = Group(
+            setup, c_panel, highlight, c_note, 
+            q_panel, q_note, punch
+        )
+        self.play(FadeOut(all_elements))
 
     def GroverProblem(self):
+        # 1. Header & Context
+        header = th("โจทย์ของ Grover's Algorithm", color=C_ACCENT)
+        header.to_edge(UP, buff=HEADER_BUFF)
+        
         setup = VGroup(
-            th("มี", size=26, color=C_MUTED),
-            MathTex("n = 8", color=WHITE).scale(0.95),
-            th("เลข และมีแค่", size=26, color=C_MUTED),
-            MathTex("1", color=C_ACCENT).scale(0.95),
-            th("เลขที่เครื่อง accept", size=26, color=C_MUTED),
-        ).arrange(RIGHT, buff=0.2)
-        setup.move_to(content_center(dy=1.5))
-        self.play(FadeIn(setup))
+            th("สมมติว่าเรามีข้อมูลที่ 'ไม่เรียงลำดับ' (Unstructured)", size=24, color=C_MUTED),
+            MathTex("N = 8", color=WHITE).scale(0.9),
+            th("รายการ", size=24, color=C_MUTED),
+        ).arrange(RIGHT, buff=0.2).next_to(header, DOWN, buff=0.4)
+        
+        self.play(Write(header), FadeIn(setup))
 
-        # 8 boxes row
+        # 2. Visualizing the Unopened Boxes
         boxes = VGroup()
         for i in range(8):
-            sq = Square(side_length=0.7, color=C_MUTED, stroke_width=2)
-            lab = MathTex(str(i), color=C_MUTED).scale(0.6).move_to(sq)
+            sq = Square(side_length=0.8, color=C_MUTED, stroke_width=2)
+            lab = MathTex("?", color=C_MUTED).scale(0.7).move_to(sq)
             boxes.add(VGroup(sq, lab))
-        boxes.arrange(RIGHT, buff=0.18)
-        boxes.move_to(content_center(dy=0.3))
-        self.play(FadeIn(boxes))
-
-        # Oracle description
-        oracle_desc = VGroup(
-            th("เครื่อง Oracle:", size=24, color=C_ACCENT),
-            th("ตอบว่า", size=22, color=C_MUTED),
-            MathTex("x", color=WHITE).scale(0.85),
-            th("ใช่หรือไม่ใช่? โดยที่", size=22, color=C_MUTED),
-            MathTex(r"f(x) \in \{0, 1\}", color=WHITE).scale(0.85),
-        ).arrange(RIGHT, buff=0.2)
-        oracle_desc.move_to(content_center(dy=-0.5))
-        self.play(FadeIn(oracle_desc))
-
-        caveat = VGroup(
-            th("ข้อแม้: oracle ต้องเขียนเป็น quantum circuit", size=20, color=C_NEG),
-            th("ถึงจะรับ superposition ของ", size=20, color=C_NEG),
-            MathTex("x", color=C_NEG).scale(0.75),
-            th("ได้", size=20, color=C_NEG),
-        ).arrange(RIGHT, buff=0.15)
-        caveat.next_to(oracle_desc, DOWN, buff=0.2)
-        self.play(FadeIn(caveat))
+        boxes.arrange(RIGHT, buff=0.2).move_to(UP * 0.2)
+        
+        self.play(LaggedStart(*[FadeIn(b) for b in boxes], lag_ratio=0.1))
         self.next_slide()
 
+        # 3. The Oracle Concept
+        oracle_rect = SurroundingRectangle(boxes, color=C_MUTED, buff=0.4)
+        oracle_label = th("Oracle: ทำหน้าที่เป็น 'ผู้ตรวจสอบ'", size=22, color=WHITE).next_to(oracle_rect, UP, buff=0.1)
+        
+        oracle_logic = VGroup(
+            th("ถ้าหยิบข้อมูล ", size=22),
+            MathTex("x", color=C_ACCENT),
+            th(" ไปถาม... Oracle จะตอบแค่ ใช่ หรือ ไม่ใช่", size=22)
+        ).arrange(RIGHT, buff=0.2).next_to(oracle_rect, DOWN, buff=0.4)
+
+        self.play(Create(oracle_rect), FadeIn(oracle_label))
+        self.play(Write(oracle_logic))
+        self.next_slide()
+
+        # 4. Comparison Table (แทนที่ Mystery Box เดิม)
+        t_header = ["Strategy", "Method", "Query Time"]
+        t_classical = ["Classical", "สุ่มเปิดทีละกล่อง", "O(N)"]
+        t_quantum = ["Quantum", "บีบแอมพลิจูด", "O(√N)"]
+
+        # สร้างตารางอย่างง่ายด้วย VGroup และตำแหน่งคงที่
+        col_x = [-4, 0, 4]
+        row_y = [-1.5, -2.1, -2.7]
+        
+        # Table UI
+        table_content = VGroup()
+        
+        # Row 0: Header
+        for idx, text in enumerate(t_header):
+            table_content.add(th(text, size=20, color=C_MUTED).move_to([col_x[idx], row_y[0], 0]))
+        
+        # Row 1: Classical
+        for idx, text in enumerate(t_classical):
+            color = C_NEG if idx == 0 else WHITE
+            table_content.add(th(text, size=20, color=color).move_to([col_x[idx], row_y[1], 0]))
+            
+        # Row 2: Quantum
+        for idx, text in enumerate(t_quantum):
+            color = C_POS if idx == 0 or idx == 2 else WHITE
+            table_content.add(th(text, size=20, color=color).move_to([col_x[idx], row_y[2], 0]))
+
+        h_line = Line([-5.5, row_y[0]-0.25, 0], [5.5, row_y[0]-0.25, 0], color=C_MUTED, stroke_width=1)
+        
+        table_group = VGroup(table_content, h_line)
+        table_group.to_edge(DOWN, buff=0.6)
+
+        self.play(FadeIn(table_group, shift=UP * 0.2))
+        
+        # Caveat
+        caveat = th("* Oracle ต้องถูกเขียนเป็น Quantum Circuit (Oracle Synthesis)", size=16, color=C_NEG)
+        caveat.to_edge(DR, buff=0.2)
+        self.play(FadeIn(caveat))
+        
+        self.next_slide()
+
+        # 5. Cleanup
+        all_elements = Group(header, setup, boxes, oracle_rect, oracle_label, oracle_logic, table_group, caveat)
+        self.play(FadeOut(all_elements))
+
     def GroverIteration(self):
-        # --- 1. INITIAL STATE (Uniform Superposition) ---
+        # 1. SETUP HEADER
+        header = th("Grover's Algorithm Step-by-Step", color=C_ACCENT)
+        header.to_edge(UP, buff=0.2)
+        self.play(Write(header))
+
+        # --- 2. INITIAL STATE (Uniform Superposition) ---
         vals_init = [AMP_INIT] * 8
-        # Create persistent chart, caption, and bottom text
         chart, _, _ = self._grover_bars(vals_init, mark_idx=CHART_MARK)
 
         cap = (
@@ -658,9 +664,9 @@ class ShorTalk(Slide):
         bot = th(T_PROB_1_8, size=22, color=C_MUTED).move_to(content_center(dy=-2.2))
 
         self.play(Write(cap), Write(chart), Write(bot))
-        self.wait(1)
+        self.next_slide() # --- Click to Oracle ---
 
-        # --- 2. STEP 1: ORACLE (Phase Inversion) ---
+        # --- 3. STEP 1: ORACLE (Phase Inversion) ---
         vals_step1 = [AMP_INIT] * 8
         vals_step1[CHART_MARK] = -AMP_INIT
 
@@ -674,9 +680,9 @@ class ShorTalk(Slide):
             Transform(bot, bot_step1),
             run_time=1.5,
         )
-        self.wait(1)
+        self.next_slide() # --- Click to Diffusion ---
 
-        # --- 3. STEP 2: DIFFUSION (Inversion about the Mean) ---
+        # --- 4. STEP 2: DIFFUSION (Inversion about the Mean) ---
         mean = sum(vals_step1) / 8
         vals_final = [2 * mean - v for v in vals_step1]
 
@@ -690,41 +696,28 @@ class ShorTalk(Slide):
             Transform(bot, bot_final),
             run_time=1.5,
         )
-        self.wait(2)
+        self.next_slide() # --- จบรอบการ Iteration ---
 
-    def GroverOneIteration3(self):
-        # 1. Match Previous End State
-        vals_old = [AMP_INIT] * 8
-        vals_old[CHART_MARK] = -AMP_INIT
-        chart, _, _ = self._grover_bars(vals_old, mark_idx=CHART_MARK)
-        cap = th(T_STEP1, size=24, color=C_ACCENT).to_edge(UP, buff=HEADER_BUFF)
-        bot = th(T_ORACLE_X, size=22, color=C_MUTED).move_to(content_center(dy=-2.2))
-        self.add(chart, cap, bot)
-
-        # 2. Define New State
-        mean = sum(vals_old) / 8
-        vals_final = [2 * mean - v for v in vals_old]
-        chart_new, _, _ = self._grover_bars(vals_final, mark_idx=CHART_MARK)
-        cap_new = th(T_STEP2, size=24, color=C_ACCENT).to_edge(UP, buff=HEADER_BUFF)
-        bot_new = th(T_FINAL, size=22, color=C_POS).move_to(bot)
-
-        # 3. Transform
+        # 5. CLEAR SCENE
+        # ล้างหน้าจอทั้งหมดเพื่อไปสู่หัวข้อถัดไป
         self.play(
-            Transform(chart, chart_new),
-            Transform(cap, cap_new),
-            Transform(bot, bot_new),
-            run_time=1.5,
+            FadeOut(Group(header, chart, cap, bot))
         )
+        self.next_slide()
 
     def GroverIterate(self):
+        header = th("ภาพรวมการทำงานของ Grover's Algorithm", color=C_ACCENT)
+        header.to_edge(UP, buff=0.2)
+        self.play(Write(header))
+
         a = 1 / np.sqrt(8)
 
-        # Simulate 3 Grover iterations
+        # Simulate Grover iterations
         def iterate(vals, mark=6):
             out = vals.copy()
-            out[mark] = -out[mark]  # phase flip
+            out[mark] = -out[mark]  # phase flip (Oracle)
             mean = sum(out) / len(out)
-            return [2 * mean - v for v in out]
+            return [2 * mean - v for v in out] # inversion about mean (Diffusion)
 
         frame0 = [a] * 8
         frame1 = iterate(frame0)
@@ -759,8 +752,7 @@ class ShorTalk(Slide):
             for i, v in enumerate(vals):
                 x = x0 + i * (mini_bar_w + mini_gap) + mini_bar_w / 2
                 h = abs(v) * 1.4
-                if h < 0.01:
-                    h = 0.01
+                if h < 0.02: h = 0.02 # บังคับให้เห็นเส้นขอบเล็กน้อย
                 col = C_ACCENT if i == 6 else (C_POS if v >= 0 else C_NEG)
                 bar = Rectangle(
                     width=mini_bar_w,
@@ -779,7 +771,7 @@ class ShorTalk(Slide):
 
         # Arrange 4 mini-charts in a row
         xs = [-5.1, -1.7, 1.7, 5.1]
-        y_row = CONTENT_CENTER_Y + 0.2
+        y_row = 0.2
         mini_charts = []
         mini_titles = VGroup()
         prob_labels = VGroup()
@@ -787,140 +779,184 @@ class ShorTalk(Slide):
         for (lab, vals), x in zip(labels_frames, xs):
             mc = mini_chart(vals, x, y_row)
             mini_charts.append(mc)
-            title = th(lab, size=22, color=C_ACCENT)
-            title.move_to([x, y_row + 1.9, 0])
+            title = th(lab, size=20, color=C_ACCENT)
+            title.move_to([x, y_row + 1.8, 0])
             mini_titles.add(title)
+            
             prob = vals[6] ** 2
-            if lab.startswith("วัด"):
+            if "วัด" in lab:
                 pl = MathTex(r"\checkmark", color=C_POS).scale(1.1)
             else:
-                pl = MathTex(rf"P = {prob * 100:.0f}\%", color=C_POS).scale(0.75)
+                pl = MathTex(rf"P \approx {prob * 100:.0f}\%", color=C_POS).scale(0.7)
             pl.move_to([x, y_row - 1.1, 0])
             prob_labels.add(pl)
 
-        self.play(
-            FadeIn(mini_titles[0]), FadeIn(mini_charts[0]), FadeIn(prob_labels[0])
-        )
+        # --- ANIMATION SEQUENCE ---
         for i in range(4):
-            # Sort the mini_chart so the axis appears before the bars
-            # mc[0] is the axis, mc[1:] are the bars
             mc = mini_charts[i]
-
             self.play(
                 AnimationGroup(
-                    Create(mc[0], run_time=0.4),  # Draw axis
-                    Write(mini_titles[i], run_time=0.4),  # Write title
+                    Create(mc[0], run_time=0.3),  # Axis
+                    Write(mini_titles[i], run_time=0.3), # Title
                     LaggedStart(
-                        *[
-                            GrowFromEdge(
-                                bar, DOWN if j != 7 else UP
-                            )  # Index 7 is mc[6] due to axis at index 0
-                            for j, bar in enumerate(mc[1:])
-                        ],
-                        lag_ratio=0.05,
+                        *[GrowFromEdge(bar, DOWN if bar.get_y() > y_row else UP) 
+                          for bar in mc[1:]],
+                        lag_ratio=0.04
                     ),
-                    FadeIn(prob_labels[i], shift=UP * 0.3),  # Float the prob label up
-                    lag_ratio=0.2,
+                    FadeIn(prob_labels[i], shift=UP * 0.2),
+                    lag_ratio=0.2
                 )
             )
-            # A tiny beat between reveals
-            self.wait(0.1)
-
+        
         self.next_slide()
 
+        # 4. CONCLUSION PUNCHLINE
         conclusion = VGroup(
             VGroup(
-                th("หลัง", size=26, color=C_MUTED),
-                MathTex(r"\sqrt{n}", color=C_ACCENT).scale(1.0),
-                th(
-                    "รอบ → วัดครั้งเดียวได้คำตอบเกือบแน่นอน", size=26, color=C_POS, weight=BOLD
-                ),
+                th("ทำซ้ำประมาณ", size=24, color=C_MUTED),
+                MathTex(r"\sqrt{N}", color=C_ACCENT).scale(1.1),
+                th("รอบ → โอกาสเจอแทบจะ 100%", size=24, color=C_POS),
             ).arrange(RIGHT, buff=0.2),
             VGroup(
-                th("Classical:", size=24, color=C_MUTED),
-                th("เปิดทีละกล่อง", size=24, color=C_MUTED),
-                MathTex("O(n)", color=C_MUTED).scale(0.9),
-                th("ครั้ง", size=24, color=C_MUTED),
-            ).arrange(RIGHT, buff=0.2),
+                th("Classical Search:", size=22, color=C_MUTED),
+                MathTex("O(N)", color=C_MUTED).scale(0.85),
+                th("สุ่มเปิดทีละอัน", size=22, color=C_MUTED),
+            ).arrange(RIGHT, buff=0.25),
             VGroup(
-                th("Grover:", size=24, color=C_POS, weight=BOLD),
-                MathTex(r"O(\sqrt{n})", color=C_POS).scale(0.9),
-                th("ครั้ง โดยใช้ quantum interference", size=24, color=C_POS),
-            ).arrange(RIGHT, buff=0.2),
-        ).arrange(DOWN, buff=0.2)
-        conclusion.move_to(content_center(dy=-2.2))
+                th("Grover Search:", size=22, color=C_POS, weight=BOLD),
+                MathTex(r"O(\sqrt{N})", color=C_POS).scale(0.9),
+                th("เร็วกว่าแบบ Quadratic Speedup", size=22, color=C_POS),
+            ).arrange(RIGHT, buff=0.25),
+        ).arrange(DOWN, buff=0.3).to_edge(DOWN, buff=0.5)
+
         self.play(Write(conclusion))
+        self.next_slide()
+
+        # 5. CLEAR SCENE
+        all_elements = Group(
+            header, *mini_charts, mini_titles, prob_labels, conclusion
+        )
+        self.play(FadeOut(all_elements))
+
 
     def ShorIntro(self):
-        shor = VGroup(
-            th("หลักการ Shor ก็ manipulate ความน่าจะเป็นเหมือนกัน", size=26, color=C_POS),
-            th("แต่มาดูหลักการการแยกตัวประกอบก่อน", size=26, color=C_POS),
-        ).arrange(DOWN, buff=0.15)
-        self.play(Write(shor))
+        # 1. Header & The Challenge
+        header = th("Shor's Algorithm: The RSA Breaker", color=C_ACCENT)
+        header.to_edge(UP, buff=HEADER_BUFF)
+        
+        challenge = VGroup(
+            th("การแยกตัวประกอบ (Integer Factorization) คือกำแพงของโลกไซเบอร์", size=24, color=C_MUTED),
+            MathTex(r"N = p \times q", color=WHITE).scale(1.5),
+            th("ถ้า N มีขนาดใหญ่มาก... คอมพิวเตอร์ปกติอาจใช้เวลาเป็นล้านปี", size=22, color=C_NEG)
+        ).arrange(DOWN, buff=0.4)
+
+        self.play(Write(header))
+        self.play(FadeIn(challenge[0]), Write(challenge[1]))
+        self.play(FadeIn(challenge[2], shift=UP * 0.3))
         self.next_slide()
-        self.play(*[FadeOut(m) for m in [shor]])
 
-    def FactoringKey(self):
-        setup = VGroup(
-            MathTex(r"N = pq, \quad p,q").scale(1.0),
-            th("เป็นจำนวนเฉพาะคี่", size=30),
-        ).arrange(RIGHT, buff=0.25)
-        setup.to_edge(UP, buff=0.5)
-        self.play(Write(setup))
+        # 2. The Shor's Magic
+        shor_logic = VGroup(
+            th("Shor ไม่ได้สุ่มหาตัวประกอบตรงๆ", size=24, color=C_POS),
+            th("แต่เปลี่ยนปัญหาการแยกตัวประกอบ ให้กลายเป็นเรื่องของ", size=24, color=WHITE),
+            th("การหาคาบของฟังก์ชัน (Period Finding)", size=32, color=C_ACCENT, weight=BOLD)
+        ).arrange(DOWN, buff=0.3).move_to(challenge)
 
-        key = th("ถ้าเราหา y ที่", size=28, color=C_MUTED)
-        eq1 = MathTex(r"y^2 \equiv 1 \pmod N, \quad 1 < y < N-1", color=C_ACCENT).scale(
-            1.1
+        # Transition from Challenge to Logic
+        self.play(
+            FadeOut(challenge, shift=LEFT * 0.5),
+            FadeIn(shor_logic, shift=LEFT * 0.5)
         )
-        key2 = th("เราจะสามารถแตกออกมาเป็น", size=28, color=C_MUTED)
-        eq2 = MathTex(r"(y-1)(y+1) \equiv 0 \pmod N").scale(1.0)
-        eq3 = MathTex(r"(y-1)(y+1)=kN").scale(1.0)
-        eq4 = MathTex(
-            r"1 < y < N-1 \rightarrow y\pm 1<N, y\pm 1>1", color=C_ACCENT
-        ).scale(1.1)
-        grp = VGroup(key, eq1, key2, eq2, eq3, eq4).arrange(DOWN, buff=0.1)
-        grp.next_to(setup, DOWN, buff=0.3)
-
-        # 2. Animate the VGroup
-        # We use a loop to maintain your specific mix of FadeIn and Write
-        for i, mobject in enumerate(grp):
-            if isinstance(mobject, Text):  # If it's the text helper
-                self.play(FadeIn(mobject, shift=UP * 0.2), run_time=0.2)
-            else:  # If it's MathTex
-                self.play(Write(mobject), run_time=0.5)
-
-        conc = VGroup(
-            th("เพราะ N ประกอบด้วยจำนวนเฉพาะ 2 ตัว", size=30, color=C_POS),
-            VGroup(
-                MathTex(r"\gcd(y\pm 1, N)", color=C_POS).scale(1.1),
-                th("คือเฉพาะของ", size=30, color=C_POS),
-                MathTex("N", color=C_POS).scale(1.1),
-            ).arrange(RIGHT, buff=0.25),
-            th(
-                "\nเพราะจำนวนเฉพาะทั้ง 2 ตัวจะอยู่ในตัวใดตัวหนึ่งอย่างเดียวไม่ได้ (ใหญ่เกิน)",
-                size=30,
-                color=C_POS,
-            ),
-        ).arrange(DOWN, buff=0.25)
-        conc.next_to(grp, DOWN, buff=0.4)
-        self.play(Write(conc))
-        euclid = th("Euclidean: O(n²) ด้วย classical", size=24, color=C_MUTED)
-        euclid.next_to(conc, DOWN, buff=0.25)
-        self.play(FadeIn(euclid))
         self.next_slide()
+
+        # 3. Probability Manipulation
+        manipulate = VGroup(
+            th("โดยใช้หัวใจสำคัญคือการแทรกสอดของคลื่น", size=24, color=C_MUTED),
+            th("เพื่อบีบความน่าจะเป็นให้ไปตกอยู่ที่คำตอบเท่านั้น", size=26, color=C_POS)
+        ).arrange(DOWN, buff=0.3).to_edge(DOWN, buff=1)
+
+        self.play(FadeIn(manipulate, shift=UP))
+        self.next_slide()
+
+        # Cleanup
+        all_elements = Group(header, shor_logic, manipulate)
+        self.play(FadeOut(all_elements))
+       
+    def FactoringKey(self):
+        # --- Section 1: Setup & Goal ---
+        header = th("การแยกตัวประกอบด้วย Shor's algorithm")
+        header.to_edge(UP, buff=0.2)
+        
+        setup = VGroup(
+            MathTex(r"N = pq"),
+            th("เป็นจำนวนเฉพาะคี่", size=30),
+        ).arrange(RIGHT, buff=0.2).next_to(header, DOWN, buff=0.2)
+        
+        goal_text = th("เป้าหมาย: หาค่า y ที่ไม่ใช่ trivial solution", size=28, color=C_MUTED)
+        equation = MathTex(r"y^2 \equiv 1 \pmod N", color=C_ACCENT).scale(1.2)
+        condition = MathTex(r"1 < y < N-1", color=C_MUTED).scale(0.8)
+        
+        goal_grp = VGroup(goal_text, equation, condition).arrange(DOWN, buff=0.3).next_to(setup, DOWN, buff=0.5)
+
+        self.play(Write(header))
+        self.play(Write(setup))
+        self.play(FadeIn(goal_text), Write(equation))
+        self.play(FadeIn(condition))
+        self.next_slide() 
+
+        # --- Section 2: The Math Trick ---
+        trick_text = th("ซึ่งหมายความว่า N หารลงตัวใน:", size=28, color=C_MUTED)
+        expansion = MathTex(r"(y-1)(y+1) = kN", color=C_ACCENT).scale(1.1)
+        
+        trick_grp = VGroup(trick_text, expansion).arrange(DOWN).next_to(setup, DOWN, buff=0.6)
+        
+        self.play(
+            FadeOut(goal_grp),
+            FadeIn(trick_grp, shift=UP)
+        )
+        self.next_slide()
+
+        # --- Section 3: The Conclusion (The "Key") ---
+        conc = VGroup(
+            th("ดังนั้นตัวประกอบของ N คือ:", size=30, color=C_POS),
+            MathTex(r"\gcd(y-1, N) \quad \text{\&} \quad \gcd(y+1, N)", color=C_POS).scale(1.2)
+        ).arrange(DOWN, buff=0.4).next_to(trick_grp, DOWN, buff=0.8)
+
+        explanation = th("เนื่องจาก p, q แยกกันอยู่ใน (y-1) และ (y+1)", size=22, color=C_MUTED)
+        explanation.next_to(conc, DOWN, buff=0.4)
+
+        self.play(Write(conc))
+        self.play(FadeIn(explanation))
+        
+        euclid = th("หาได้เร็วมากด้วย Euclidean Algorithm", size=22, color=C_ACCENT)
+        euclid.to_edge(DOWN, buff=0.5)
+        self.play(Write(euclid))
+        self.next_slide()
+
+        # --- Section 4: Fade Out ---
+        # ล้างหน้าจอทั้งหมดเพื่อเริ่มหัวข้อถัดไป
+        self.play(
+            FadeOut(Group(header, setup, trick_grp, conc, explanation, euclid))
+        )
 
     def FactoringTrickExample(self):
+        # --- 1. Header & Setup ---
+        header = th("การแยกตัวประกอบด้วย Shor's algorithm")
+        header.to_edge(UP, buff=0.2)
+        
         # Act 2: verify with N = 15
         subtitle = VGroup(
             th("ตัวอย่างลองหาใน", size=22, color=C_MUTED),
             MathTex("N = 15", color=C_ACCENT).scale(0.9),
             th("จะมี y ∈ {1, 4, 11, 14} ที่", size=22, color=C_MUTED),
-            MathTex(r"y^2 \equiv 1", color=C_MUTED).scale(0.85),
-        ).arrange(RIGHT, buff=0.2)
-        subtitle.to_edge(UP, buff=0.3)
+            MathTex(r"y^2 \equiv 1 \pmod{15}", color=C_MUTED).scale(0.85),
+        ).arrange(RIGHT, buff=0.2).next_to(header, DOWN, buff=0.2)
+        
+        self.play(Write(header))
         self.play(FadeIn(subtitle))
 
-        header_row = ["y", r"\gcd(y-1,\,15)", r"\gcd(y+1,\,15)", "ผล"]
+        # --- 2. Table Construction ---
+        header_row = ["y", r"\gcd(y-1,\,15)", r"\gcd(y+1,\,15)", "ผลลัพธ์"]
         header_kinds = ["math", "math", "math", "text"]
         rows_data = [
             [("math", "1"), ("math", "15"), ("math", "1"), ("text", "—")],
@@ -935,7 +971,7 @@ class ShorTalk(Slide):
         def make_mobj(kind, content, color):
             if kind == "math":
                 return MathTex(content, color=color).scale(0.85)
-            return Text(content, font=TH_FONT, font_size=24, color=color)
+            return th(content, size=24, color=color)
 
         # Header row
         header_mobjs = VGroup()
@@ -954,11 +990,11 @@ class ShorTalk(Slide):
         # Data rows
         row_mobjs = VGroup()
         for i, (row, useful) in enumerate(zip(rows_data, useful_rows)):
-            y = -(i + 1) * row_h - 0.1
+            y_pos = -(i + 1) * row_h - 0.1
             color = C_POS if useful else C_MUTED
             for j, (kind, content) in enumerate(row):
                 m = make_mobj(kind, content, color)
-                m.move_to([col_x[j], y, 0])
+                m.move_to([col_x[j], y_pos, 0])
                 row_mobjs.add(m)
 
         full_table = VGroup(header_mobjs, underline, row_mobjs)
@@ -970,16 +1006,11 @@ class ShorTalk(Slide):
             self.play(FadeIn(slice_, shift=UP * 0.1), run_time=0.3)
         self.next_slide()
 
-        # Fade failed rows, strikethrough
+        # --- 3. Highlighting Success ---
+        # Fade failed rows (Trivial solutions 1 and 14)
         fade_targets = VGroup(
-            row_mobjs[0],
-            row_mobjs[1],
-            row_mobjs[2],
-            row_mobjs[3],
-            row_mobjs[12],
-            row_mobjs[13],
-            row_mobjs[14],
-            row_mobjs[15],
+            row_mobjs[0:4],   # Row 0
+            row_mobjs[12:16], # Row 3
         )
 
         def strike(row_idx):
@@ -990,53 +1021,53 @@ class ShorTalk(Slide):
 
         strikes = VGroup(strike(0), strike(3))
         self.play(
-            fade_targets.animate.set_opacity(0.35),
-            Create(strikes[0]),
-            Create(strikes[1]),
+            fade_targets.animate.set_opacity(0.3),
+            Create(strikes),
         )
 
-        # Payoff line
-        r1_gcd_left = row_mobjs[1 * 4 + 1]  # "3"
+        # Payoff line: Show how we got 3 and 5
+        r1_gcd_left = row_mobjs[1 * 4 + 1]   # "3"
         r1_gcd_right = row_mobjs[1 * 4 + 2]  # "5"
 
         factor_line = MathTex(
-            r"15",
-            r"=",
-            r"3",
-            r"\times",
-            r"5",
+            r"15", r"=", r"3", r"\times", r"5",
         ).scale(1.4)
         factor_line[0].set_color(WHITE)
-        factor_line[1].set_color(WHITE)
         factor_line[2].set_color(C_POS)
-        factor_line[3].set_color(WHITE)
         factor_line[4].set_color(C_POS)
-        factor_line.next_to(full_table, DOWN, buff=0.35)
+        factor_line.next_to(full_table, DOWN, buff=0.6)
 
         self.play(
-            TransformFromCopy(r1_gcd_left, factor_line[2]),
-            TransformFromCopy(r1_gcd_right, factor_line[4]),
             FadeIn(factor_line[0]),
             FadeIn(factor_line[1]),
+            TransformFromCopy(r1_gcd_left, factor_line[2]),
             FadeIn(factor_line[3]),
+            TransformFromCopy(r1_gcd_right, factor_line[4]),
         )
         self.next_slide()
 
+        # --- 4. Conclusion & Cleanup ---
+        self.play(
+            FadeOut(Group(header, subtitle, full_table, strikes, factor_line))
+        )
+
     def ShorFindOrder(self):
-        # --- 1. Intuition Section (วางไว้ด้านบน) ---
+        # --- 1. Header & Intuition ---
+        header = th("การหาคาบ: หัวใจของ Shor's Algorithm")
+        header.to_edge(UP, buff=0.2)
+        
         intuition_text = VGroup(
-            th("สุ่ม x แล้วยกกำลังไปเรื่อยๆ เศษจะวนกลับมาเป็น 1", size=22),
+            th("สุ่ม x แล้วยกกำลังไปเรื่อยๆ เศษจะวนกลับมาเป็น 1", size=22, color=C_MUTED),
             MathTex(r"x^1, x^2, x^3, \dots \pmod N", color=C_MUTED).scale(0.7),
-            th("เราเรียกความยาวรอบนี้ว่า Order (r)", size=24, color=C_ACCENT),
-        ).arrange(DOWN, buff=0.15)
+            th("เราเรียกความยาวรอบการวนนี้ว่า Order (r)", size=24, color=C_ACCENT),
+        ).arrange(DOWN, buff=0.15).next_to(header, DOWN, buff=0.2)
 
-        intuition_text.to_edge(UP, buff=0.2)
-
+        self.play(Write(header))
         self.play(FadeIn(intuition_text, shift=UP * 0.2))
         self.next_slide()
 
-        # --- 2. Steps Section (ย้ายไปชิดซ้าย) ---
-        # 1) สุ่ม x
+        # --- 2. Steps Section (Left Aligned) ---
+        # Step 1: สุ่ม x
         s1 = VGroup(
             th("1) สุ่ม", size=22),
             MathTex(r"x", color=WHITE).scale(0.9),
@@ -1044,47 +1075,51 @@ class ShorTalk(Slide):
             MathTex(r"\gcd(x, N) = 1", color=WHITE).scale(0.9),
         ).arrange(RIGHT, buff=0.15)
 
-        # 2) นิยาม Order
+        # Step 2: นิยาม Order
         s2_label = th("2) หา order r ที่เป็นเลขน้อยที่สุดที่ทำให้:", size=22)
         s2_eq = MathTex(r"x^r \equiv 1 \pmod N", color=C_ACCENT).scale(0.9)
         s2 = VGroup(s2_label, s2_eq).arrange(DOWN, buff=0.1)
 
-        # 3) เงื่อนไขเลขคู่ 50%
-        s3_label = th(
-            "3) มีโอกาส 50% ที่ r จะเป็นเลขคู่ ทำให้แยกตัวประกอบได้", size=22, color=C_POS
-        )
-        s3_logic = th("โดยใช้ค่า", size=20)
+        # Step 3: เงื่อนไขเลขคู่
+        s3_label = th("3) ถ้า r เป็นเลขคู่ เราจะแตกตัวประกอบได้สำเร็จ", size=22, color=C_POS)
         s3_math = MathTex(r"y = x^{r/2}", color=WHITE).scale(0.9)
-        s3_result = th("จะได้:", size=20, color=C_MUTED)
-
-        s3_line2 = VGroup(s3_logic, s3_math, s3_result).arrange(RIGHT, buff=0.15)
         s3_eq = MathTex(r"y^2 \equiv 1 \pmod N", color=C_POS).scale(0.9)
-
+        
+        s3_line2 = VGroup(th("โดยใช้ค่า", size=20), s3_math, th("ซึ่งจะได้:", size=20, color=C_MUTED)).arrange(RIGHT, buff=0.15)
         s3 = VGroup(s3_label, s3_line2, s3_eq).arrange(DOWN, buff=0.1)
 
-        # รวมกลุ่ม Steps แล้วจัดให้อยู่ฝั่งซ้าย
+        # จัดกลุ่มและแสดงผล
         steps = VGroup(s1, s2, s3).arrange(DOWN, buff=0.35, aligned_edge=LEFT)
         steps.next_to(intuition_text, DOWN, buff=0.6)
 
         for s in steps:
             self.play(FadeIn(s, shift=RIGHT * 0.2))
-            self.wait(0.5)
-
+        
         self.next_slide()
 
-        # --- 3. Final Punchline ---
+        # --- 3. The Bottleneck & Quantum Hook ---
         bottleneck = VGroup(
-            th("แต่คอมพิวเตอร์ธรรมดาหา r ได้ช้ามาก (Exponential)", size=20, color=C_NEG),
-            th("เลยใช้ Quantum Computer", size=20, color=C_ACCENT),
-        ).arrange(DOWN, buff=0.15)
-
-        bottleneck.next_to(steps, DOWN, buff=0.6)
+            th("คอมพิวเตอร์ทั่วไปหา r ได้ช้ามาก (ใช้เวลาเป็น Exponential)", size=20, color=C_NEG),
+            th("นี่คือจุดที่ Quantum Computer จะเข้ามาทำแทน!", size=22, color=C_ACCENT, weight=BOLD),
+        ).arrange(DOWN, buff=0.15).to_edge(DOWN, buff=0.6)
 
         self.play(Write(bottleneck))
+        self.next_slide()
+
+        # --- 4. Cleanup ---
+        self.play(
+            FadeOut(Group(header, intuition_text, steps, bottleneck))
+        )
 
     def ShorSteps(self):
-        # --- INITIAL SETUP & SLIDE 1: PARALLEL ---
-        # Register strips only once to maintain object identity
+        # --- 0. PREPARE TITLES & LABELS ---
+        curr_title = th("Shor's Algorithm: ขั้นตอนเชิงควอนตัม", color=C_ACCENT).to_edge(UP, buff=HEADER_BUFF)
+        
+        step1_title = th("Step 1: Quantum Parallelism & Modular Exponentiation", size=24, color=C_ACCENT).to_edge(UP, buff=HEADER_BUFF)
+        step2_title = th("Step 2: Measurement & Wavefunction Collapse", size=24, color=C_ACCENT).to_edge(UP, buff=HEADER_BUFF)
+        step3_title = th("Step 3: Quantum Fourier Transform (Period Finding)", size=24, color=C_ACCENT).to_edge(UP, buff=HEADER_BUFF)
+
+        # --- 1. INITIAL SETUP & SLIDE 1: PARALLEL ---
         k_strip, _, k_texts = self._register_strip(
             list(range(K_VALS)), center_y=1.5, label_text="k", color_fn=lambda i: WHITE
         )
@@ -1094,13 +1129,16 @@ class ShorTalk(Slide):
 
         note = th(S_K_SUP, size=20, color=C_MUTED).next_to(k_strip, UP, buff=0.4)
 
+        # เริ่มต้นฉาก: แสดงสถานะ Superposition เริ่มต้น
+        self.play(Write(curr_title))
         self.play(FadeIn(k_strip), FadeIn(f_strip), FadeIn(note))
-        self.wait(1)
+        self.wait(0.5)
 
-        # Transition to Gate/Parallel Compute
+        # เข้าสู่ Step 1: คำนวณ f(k) ทั้งหมดพร้อมกัน
+        self.play(Transform(curr_title, step1_title))
         new_note_parallel = th(S_GATE, size=20, color=C_ACCENT).move_to(note)
+        
         parallel_anims = [Transform(note, new_note_parallel)]
-
         for i in range(K_VALS):
             val = (
                 MathTex(str(F_PATTERN[i]), color=PALETTE[F_PATTERN[i]])
@@ -1112,101 +1150,156 @@ class ShorTalk(Slide):
                 f_cells[i].animate.set_fill(PALETTE[F_PATTERN[i]], opacity=0.3)
             )
 
-        self.play(*parallel_anims, run_time=0.8)
-        self.wait(1)
+        self.play(*parallel_anims, run_time=1.2)
+        self.next_slide() 
 
         # --- SLIDE 2: COLLAPSE ---
+        self.play(Transform(curr_title, step2_title))
         new_note_collapse = th(S_COLLAPSE, size=20, color=C_POS).move_to(note)
-        keep_k = [3, 7, 11]
+        
+        keep_k = [3, 7, 11] # ค่า k ที่ให้ผล f(k) ตรงกับค่าที่ถูกวัด (ตัวอย่าง)
         collapse_anims = [Transform(note, new_note_collapse)]
 
         for i in range(K_VALS):
             if i not in keep_k:
-                collapse_anims.extend(
-                    [
-                        k_texts[i].animate.set_opacity(0.1),
-                        f_cells[i].animate.set_opacity(0.1),
-                        f_texts[i].animate.set_opacity(0.1),
-                    ]
-                )
+                collapse_anims.extend([
+                    k_texts[i].animate.set_opacity(0.1),
+                    f_cells[i].animate.set_opacity(0.1),
+                    f_texts[i].animate.set_opacity(0.1),
+                ])
             else:
                 collapse_anims.append(k_texts[i].animate.set_color(C_POS).scale(1.2))
 
         self.play(*collapse_anims)
 
-        # Draw the Period (r) arrows
+        # วาดลูกศรแสดงคาบ (r)
         r_arrows = VGroup()
         for i in range(len(keep_k) - 1):
             arr = DoubleArrow(
                 k_texts[keep_k[i]].get_top(),
                 k_texts[keep_k[i + 1]].get_top(),
-                buff=0.1,
-                color=C_ACCENT,
+                buff=0.1, color=C_ACCENT,
             ).shift(UP * 0.2)
             lbl = MathTex("r", color=C_ACCENT).scale(0.6).next_to(arr, UP, buff=0.05)
             r_arrows.add(arr, lbl)
 
         self.play(Create(r_arrows))
-        self.wait(1)
+        self.next_slide() 
 
         # --- SLIDE 3: QFT & PROBABILITY ---
-        r_val = 4
-        Q = 16
-        M_val = 3
-
+        self.play(Transform(curr_title, step3_title))
+        
+        # ฟังก์ชันความน่าจะเป็นหลังทำ QFT
+        r_val, Q, M_val = 4, 16, 3
         def prob_func(k):
             denom_val = np.sin(np.pi * k * r_val / Q)
-            if abs(denom_val) < 1e-6:
-                return 1.0
+            if abs(denom_val) < 1e-6: return 1.0
             num_val = np.sin(np.pi * k * r_val * (M_val + 1) / Q)
             return (num_val / ((M_val + 1) * denom_val)) ** 2
 
-        # UI elements for final state
-        final_note = th(S_QFT, size=20, color=C_ACCENT).to_edge(UP, buff=1.0)
-        prob_formula = (
-            MathTex(
-                r"P_{|k\rangle\otimes |f(x_0)\rangle} = \frac{C^2}{2^{4n}} \frac{\sin^2 \frac{\pi kr(M+1)}{2^{2n}}}{\sin^2\frac{\pi kr}{2^{2n}}}",
-                color=WHITE,
-            )
-            .scale(0.6)
-            .next_to(final_note, DOWN, buff=0.8)
-        )
+        # เตรียม UI สำหรับผลลัพธ์ QFT
+        final_note = th(S_QFT, size=20, color=C_ACCENT).next_to(curr_title, DOWN, buff=0.2)
+        prob_formula = MathTex(
+            r"P(k) = \frac{1}{Q} \left| \sum_{j=0}^{M} e^{2\pi i j k r / Q} \right|^2",
+            color=WHITE,
+        ).scale(0.7).next_to(final_note, DOWN, buff=0.6)
 
-        formula_label = th(
-            "Probability Distribution (QFT Result):", size=18, color=C_ACCENT
-        ).next_to(prob_formula, UP, buff=0.2)
+        formula_label = th("Probability Distribution (QFT Result):", size=18, color=C_ACCENT).next_to(prob_formula, UP, buff=0.2)
 
         ax = Axes(
-            x_range=[0, 16.5, 4],
-            y_range=[0, 1.2, 0.5],
-            x_length=10,
-            y_length=2.5,
+            x_range=[0, 16.5, 4], y_range=[0, 1.2, 0.5],
+            x_length=10, y_length=2.5,
             axis_config={"include_numbers": True, "font_size": 18, "color": C_MUTED},
         ).shift(DOWN * 1.5)
 
-        qft_plot = ax.plot(
-            prob_func, color=C_POS, x_range=[0, 16], use_smoothing=True, stroke_width=3
-        )
+        qft_plot = ax.plot(prob_func, color=C_POS, x_range=[0, 16], use_smoothing=True, stroke_width=3)
 
-        # Final Transition: Cleanup old elements and bring in QFT
+        # Transition สุดท้าย: เคลียร์แถบข้อมูลเดิมและแทนที่ด้วยสูตรและกราฟ
         self.play(
             Transform(note, final_note),
             FadeOut(f_strip),
             FadeOut(r_arrows),
-            FadeOut(
-                VGroup(*[k_texts[i] for i in range(K_VALS) if i not in keep_k])
-            ),  # Fade remaining faint text
+            FadeOut(VGroup(*[k_texts[i] for i in range(K_VALS) if i not in keep_k])), 
             FadeTransform(k_strip, prob_formula),
             run_time=1.2,
         )
 
-        self.play(FadeIn(formula_label, shift=UP * 0.2), Create(ax), run_time=1)
-
+        self.play(FadeIn(formula_label, shift=UP * 0.2), Create(ax))
         self.play(Create(qft_plot), run_time=1.5, rate_func=smooth)
-        self.wait(2)
+        self.next_slide() 
+
+        # --- CLEANUP ---
+        self.play(
+            FadeOut(Group(
+                curr_title, ax, qft_plot, formula_label, 
+                prob_formula, note, k_texts[3], k_texts[7], k_texts[11]
+            ))
+        )
+
+    def ShorRecover(self):
+        header = title_bar("การใช้ค่า r ใน Shor's Algorithm")
+        
+        # --- 1. Success Case ---
+        chain = VGroup(
+            VGroup(
+                th("Quantum step บอกว่า", size=24, color=C_MUTED),
+                MathTex("r = 4", color=C_ACCENT).scale(1.0),
+            ).arrange(RIGHT, buff=0.25),
+            VGroup(
+                th("ย้อนสูตร:", size=24, color=C_MUTED),
+                MathTex(r"y = x^{r/2} = 2^{4/2} = 4", color=WHITE).scale(0.95),
+            ).arrange(RIGHT, buff=0.25),
+            VGroup(
+                th("gcd:", size=24, color=C_MUTED),
+                MathTex(r"\gcd(y-1, N) \text{ \& } \gcd(y+1, N)", color=C_POS).scale(0.8),
+            ).arrange(RIGHT, buff=0.25),
+            VGroup(
+                MathTex(r"15 = 3 \times 5", color=C_POS).scale(1.4),
+                th("  แยกตัวประกอบสำเร็จ!", size=28, color=C_POS, weight=BOLD),
+            ).arrange(RIGHT, buff=0.3),
+        ).arrange(DOWN, buff=0.4).move_to(content_center())
+
+        for item in chain:
+            self.play(FadeIn(item, shift=UP * 0.1))
+        self.next_slide()
+
+        # --- 2. Failure Case: When r is Odd ---
+        self.play(chain.animate.set_opacity(0.15), header.animate.set_opacity(0.15))
+
+        fail_box = RoundedRectangle(height=3, width=9, color=C_NEG, fill_opacity=0.1).move_to(content_center())
+        fail_title = th("ถ้า r เป็นเลขคี่ล่ะ? (Failure Case)", size=26, color=C_NEG).next_to(fail_box, UP, buff=0.3)
+        
+        # ใช้ MathTex สำหรับส่วนของสมการเพื่อให้แสดงผลเลขยกกำลังและเศษส่วนได้สวยงาม
+        fail_line1 = VGroup(
+            th("เราจะหาค่า", size=22),
+            MathTex(r"y = x^{r/2}", color=C_NEG).scale(0.9),
+            th("ที่เป็นจำนวนเต็มไม่ได้", size=22)
+        ).arrange(RIGHT, buff=0.2)
+
+        fail_line2 = VGroup(
+            th("ทำให้ใช้สูตร", size=22),
+            MathTex(r"\gcd", color=C_NEG).scale(0.9),
+            th("เพื่อแยกตัวประกอบไม่ได้", size=22)
+        ).arrange(RIGHT, buff=0.2)
+
+        solution = th("ทางแก้: สุ่มค่า x ใหม่ แล้วเริ่มทำ Quantum Step อีกครั้ง", size=24, color=C_ACCENT, weight=BOLD)
+
+        fail_content = VGroup(fail_line1, fail_line2, solution).arrange(DOWN, buff=0.4).move_to(fail_box)
+
+        self.play(Create(fail_box), Write(fail_title))
+        self.play(FadeIn(fail_content, shift=DOWN * 0.2))
+        self.next_slide()
+
+        # --- 3. Cleanup ---
+        self.play(
+            FadeOut(Group(header, chain, fail_box, fail_title, fail_content))
+        )
 
     def ShorCaveats(self):
-        # --- 2. MULTI-FACTOR RECURSION (Addressing N with > 2 factors) ---
+        # --- 1. HEADER & MULTI-FACTOR ---
+        header = th("Shor's Algorithm: Complexity & Limitation")
+        header.to_edge(UP, buff=0.2)
+        
         multi = (
             VGroup(
                 th("If N has > 2 prime factors:", size=20, color=WHITE),
@@ -1217,136 +1310,71 @@ class ShorTalk(Slide):
                 th("times.", size=20, color=C_MUTED),
             )
             .arrange(RIGHT, buff=0.2)
-            .to_edge(UP, buff=0.6)
+            .to_edge(UP, buff=0.8)
         )
 
+        self.play(Write(header))
         self.play(FadeIn(multi, shift=UP * 0.2))
-        self.wait(1)
+        self.next_slide()
 
-        # --- 3. COMPLEXITY DASHBOARD (Classical vs Quantum) ---
-        # Let's build a comparison table/visual
+        # --- 2. COMPLEXITY DASHBOARD ---
         box_c = RoundedRectangle(height=2.5, width=5, color=C_MUTED, corner_radius=0.1)
         box_q = RoundedRectangle(height=2.5, width=5, color=C_POS, corner_radius=0.1)
-        boxes = (
-            VGroup(box_c, box_q).arrange(RIGHT, buff=0.5).next_to(multi, DOWN, buff=0.8)
-        )
+        boxes = VGroup(box_c, box_q).arrange(RIGHT, buff=0.5).next_to(multi, DOWN, buff=0.8)
 
-        # Labels
-        lbl_c = th("Classical (GNFS)", size=22, color=C_MUTED).next_to(
-            box_c, UP, buff=0.2
-        )
-        lbl_q = th("Shor's Algorithm", size=22, color=C_POS).next_to(
-            box_q, UP, buff=0.2
-        )
+        lbl_c = th("Classical (GNFS)", size=22, color=C_MUTED).next_to(box_c, UP, buff=0.2)
+        lbl_q = th("Shor's Algorithm", size=22, color=C_POS).next_to(box_q, UP, buff=0.2)
 
-        # Math inside boxes
-        math_c = (
-            MathTex(
-                r"O\left(e^{1.9 (\ln N)^{1/3} (\ln \ln N)^{2/3}}\right)", color=WHITE
-            )
-            .scale(0.7)
-            .move_to(box_c)
-        )
-        # We simplify 2^(n/2) to the exponential nature
-        math_q = (
-            VGroup(
-                MathTex(r"O(n^3)", color=WHITE),
-                MathTex(r"\rightarrow O(n^2 \log n)", color=C_ACCENT).scale(0.8),
-            )
-            .arrange(DOWN, buff=0.2)
-            .move_to(box_q)
-        )
+        math_c = MathTex(
+            r"O\left(e^{1.9 (\ln N)^{1/3} (\ln \ln N)^{2/3}}\right)", color=WHITE
+        ).scale(0.7).move_to(box_c)
+
+        math_q = VGroup(
+            MathTex(r"O(n^3)", color=WHITE),
+            MathTex(r"\rightarrow O(n^2 \log n)", color=C_ACCENT).scale(0.8),
+        ).arrange(DOWN, buff=0.2).move_to(box_q)
 
         # Speed visualization (Simple Bars)
-        bar_c = (
-            Rectangle(width=0.5, height=0.2, fill_opacity=1, color=RED)
-            .next_to(box_c, DOWN, buff=0.2)
-            .align_to(box_c, LEFT)
-        )
-        bar_q = (
-            Rectangle(width=4.5, height=0.2, fill_opacity=1, color=GREEN)
-            .next_to(box_q, DOWN, buff=0.2)
-            .align_to(box_q, LEFT)
-        )
+        bar_c = Rectangle(width=0.5, height=0.2, fill_opacity=1, color=RED).next_to(box_c, DOWN, buff=0.2).align_to(box_c, LEFT)
+        bar_q = Rectangle(width=4.5, height=0.2, fill_opacity=1, color=GREEN).next_to(box_q, DOWN, buff=0.2).align_to(box_q, LEFT)
 
         self.play(Create(boxes), Write(lbl_c), Write(lbl_q))
         self.play(Write(math_c), Write(math_q))
         self.play(GrowFromEdge(bar_c, LEFT), GrowFromEdge(bar_q, LEFT))
-        self.next_slide()
-
-        technical_note = (
-            VGroup(
-                th("* Total complexity for any N: ", size=14, color=C_MUTED),
-                MathTex(
-                    r"O(\text{factors} \cdot n^3) \approx O(n^4)", color=C_ACCENT
-                ).scale(0.5),
-            )
-            .arrange(RIGHT, buff=0.1)
-            .next_to(bar_q, DOWN, buff=0.2)
-            .align_to(bar_q, LEFT)
-        )
+        
+        technical_note = VGroup(
+            th("* Total complexity for any N: ", size=14, color=C_MUTED),
+            MathTex(r"O(\text{factors} \cdot n^3) \approx O(n^4)", color=C_ACCENT).scale(0.5),
+        ).arrange(RIGHT, buff=0.1).next_to(bar_q, DOWN, buff=0.2).align_to(bar_q, LEFT)
 
         self.play(FadeIn(technical_note, shift=UP * 0.1))
+        self.next_slide()
 
-        # --- 4. HACKING & QUBIT REALITY ---
-        # The 6000 qubit claim vs Energy
-        hack_info = (
-            VGroup(
-                th("To crack RSA-2048:", size=24, color=WHITE),
-                MathTex(r"\approx 6,200 \text{ Logical Qubits}", color=C_ACCENT).scale(
-                    1.2
-                ),
-            )
-            .arrange(RIGHT, buff=0.4)
-            .next_to(boxes, DOWN, buff=1.0)
-        )
+        # --- 3. HACKING & QUBIT REALITY ---
+        hack_info = VGroup(
+            th("To crack RSA-2048:", size=24, color=WHITE),
+            MathTex(r"\approx 6,200 \text{ Logical Qubits}", color=C_ACCENT).scale(1.2),
+        ).arrange(RIGHT, buff=0.4).next_to(boxes, DOWN, buff=1.0)
 
-        warning = (
-            VGroup(
-                th("Current Bottleneck:", size=20, color=RED, weight=BOLD),
-                th("Error Correction & Massive Energy Needs", size=18, color=WHITE),
-            )
-            .arrange(DOWN, buff=0.1)
-            .next_to(hack_info, DOWN, buff=0.4)
-        )
+        warning = VGroup(
+            th("Current Bottleneck:", size=20, color=RED, weight=BOLD),
+            th("Error Correction & Massive Energy Needs", size=18, color=WHITE),
+        ).arrange(DOWN, buff=0.1).next_to(hack_info, DOWN, buff=0.4)
 
         self.play(FadeIn(hack_info, shift=RIGHT * 0.5))
         self.play(Indicate(hack_info[1], color=C_ACCENT))
         self.next_slide()
 
         self.play(Write(warning))
-
         self.next_slide()
 
-    def ShorRecover(self):
-        header = title_bar("ได้ r แล้ว — ปิดจ็อบ!")
-
-        chain = VGroup(
-            VGroup(
-                th("Quantum step บอกว่า", size=24, color=C_MUTED),
-                MathTex("r = 4", color=C_ACCENT).scale(1.0),
-            ).arrange(RIGHT, buff=0.25),
-            VGroup(
-                th("ย้อนสูตร:", size=24, color=C_MUTED),
-                MathTex(r"y = 2^{r/2} = 2^2 = 4", color=WHITE).scale(0.95),
-            ).arrange(RIGHT, buff=0.25),
-            VGroup(
-                th("gcd:", size=24, color=C_MUTED),
-                MathTex(r"\gcd(3, 15) = 3,\;\; \gcd(5, 15) = 5", color=C_POS).scale(
-                    0.9
-                ),
-            ).arrange(RIGHT, buff=0.25),
-            VGroup(
-                MathTex(r"15 = 3 \times 5", color=C_POS).scale(1.4),
-                th("  แยกตัวประกอบสำเร็จ!", size=28, color=C_POS, weight=BOLD),
-            ).arrange(RIGHT, buff=0.3),
-        ).arrange(DOWN, buff=0.4)
-        chain.move_to(content_center())
-
-        for item in chain:
-            self.play(FadeIn(item, shift=UP * 0.1))
-        self.next_slide()
-        self.play(FadeOut(header), FadeOut(chain))
+        # --- 4. CLEANUP ---
+        self.play(
+            FadeOut(Group(
+                header, multi, boxes, lbl_c, lbl_q, math_c, math_q, 
+                bar_c, bar_q, technical_note, hack_info, warning
+            ))
+        )
 
     def Tradeoffs(self):
         header = title_bar("Time & Space tradeoff")
