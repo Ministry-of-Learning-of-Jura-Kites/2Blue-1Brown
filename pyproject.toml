@@ -1,0 +1,10 @@
+[project]
+name = "comp-theory-project"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "manim>=0.20.1",
+    "manim-slides[pyside6]>=5.6.0",
+]
