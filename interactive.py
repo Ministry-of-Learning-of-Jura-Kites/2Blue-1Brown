@@ -84,8 +84,8 @@ class ShorTalk(Slide):
         self.title()
         self.QuantumIntro()
         self.QubitBasic()
-        self.QuantumSpeedup()
         self.Why2n()
+        self.QuantumSpeedup()
         self.GroverProblem()
         self.GroverIteration()
         self.GroverIterate()
@@ -435,6 +435,80 @@ class ShorTalk(Slide):
         self.next_slide()
         self.play(FadeOut(all_qubit_elements))
 
+    def Why2n(self):
+        # 1. SETUP HEADER
+        setup = th("n classical bits กับ n qubits ต่างกันยังไง?", size=26, color=C_ACCENT)
+        setup.to_edge(UP, buff=0.2)  # ขยับขึ้นเล็กน้อยเพื่อให้มีพื้นที่ด้านล่าง
+        self.play(FadeIn(setup))
+
+        configs = ["00", "01", "10", "11"]
+
+        # ------ 2. CLASSICAL PANEL ------
+        c_title = th("2 classical bits", size=22, color=C_MUTED)
+        c_rows = VGroup(*[MathTex(cfg, color=WHITE).scale(0.75) for cfg in configs])
+        c_rows.arrange(DOWN, buff=0.15)
+
+        c_panel = VGroup(c_title, c_rows).arrange(DOWN, buff=0.25)
+        c_panel.move_to(content_center(x=-3.5, dy=1.1))
+
+        highlight = SurroundingRectangle(
+            c_rows[2], color=C_ACCENT, buff=0.08, stroke_width=3
+        )
+        c_note = th("อยู่ที่เดียวในเวลาเดียว", size=18, color=C_MUTED)
+        c_note.next_to(c_panel, DOWN, buff=0.25)
+
+        self.play(FadeIn(c_panel))
+        self.play(Create(highlight), FadeIn(c_note))
+        self.next_slide()  # --- หยุดเพื่อให้เห็นว่า Classical เลือกได้แค่ 1 จาก 4 ---
+
+        # ------ 3. QUANTUM PANEL ------
+        q_title = th("2 qubits", size=22, color=C_ACCENT)
+        q_rows = VGroup()
+        amp_labels = [r"\alpha_{00}", r"\alpha_{01}", r"\alpha_{10}", r"\alpha_{11}"]
+        for cfg, amp in zip(configs, amp_labels):
+            lhs = MathTex(cfg, color=WHITE).scale(0.75)
+            arrow = MathTex(r"\to", color=C_MUTED).scale(0.7)
+            rhs = MathTex(amp, color=C_ACCENT).scale(0.75)
+            row = VGroup(lhs, arrow, rhs).arrange(RIGHT, buff=0.15)
+            q_rows.add(row)
+        q_rows.arrange(DOWN, buff=0.15, aligned_edge=LEFT)
+
+        q_panel = VGroup(q_title, q_rows).arrange(DOWN, buff=0.25)
+        q_panel.move_to(content_center(x=3.2, dy=1.1))
+
+        q_note = VGroup(
+            th(
+                "แต่ละ state เก็บข้อมูลด้วยจำนวนเชิงซ้อนทำให้เกิดการแทรกสอดได้",
+                size=18,
+                color=C_MUTED,
+            ),
+            # MathTex(r"|\alpha_{cfg}|^2 = P(\text{collapse}\to cfg)", color=C_POS).scale(
+            #     0.65
+            # ),
+            th("เป็นไปได้หลายอย่างในเวลาเดียวกัน", size=18, color=C_MUTED),
+        ).arrange(DOWN, buff=0.15)
+        q_note.next_to(q_panel, DOWN, buff=0.25)
+
+        self.play(FadeIn(q_panel))
+        self.play(Write(q_note))
+        self.next_slide()  # --- หยุดเพื่อเปรียบเทียบ Classical vs Quantum ---
+
+        # ------ 4. PUNCHLINE (The Why) ------
+        punch = VGroup(
+            th("50 qubits → 2⁵⁰ ≈ 10¹⁵ amplitudes", size=24, color=C_POS, weight=BOLD),
+            th("classical จำลองไม่ไหว (ใช้ RAM มหาศาล)", size=22, color=C_MUTED),
+        ).arrange(DOWN, buff=0.15)
+        punch.to_edge(DOWN, buff=0.6)
+
+        self.play(Write(punch))
+        self.play(Indicate(punch[0], color=C_POS))  # เน้นย้ำตัวเลขมหาศาล
+        self.next_slide()
+
+        # ------ 5. CLEAR SCENE ------
+        # รวบรวมทุกอย่างเป็น Group เพื่อล้างหน้าจอให้สะอาด
+        all_elements = Group(setup, c_panel, highlight, c_note, q_panel, q_note, punch)
+        self.play(FadeOut(all_elements))
+
     def QuantumSpeedup(self):
         header = th("จุดที่ Quantum ได้เปรียบ", color=C_ACCENT)
         header.to_edge(UP, HEADER_BUFF)
@@ -543,80 +617,6 @@ class ShorTalk(Slide):
             summary,  # Summary elements
         )
         self.play(FadeOut(clear), FadeOut(header))
-
-    def Why2n(self):
-        # 1. SETUP HEADER
-        setup = th("n classical bits กับ n qubits ต่างกันยังไง?", size=26, color=C_ACCENT)
-        setup.to_edge(UP, buff=0.2)  # ขยับขึ้นเล็กน้อยเพื่อให้มีพื้นที่ด้านล่าง
-        self.play(FadeIn(setup))
-
-        configs = ["00", "01", "10", "11"]
-
-        # ------ 2. CLASSICAL PANEL ------
-        c_title = th("2 classical bits", size=22, color=C_MUTED)
-        c_rows = VGroup(*[MathTex(cfg, color=WHITE).scale(0.75) for cfg in configs])
-        c_rows.arrange(DOWN, buff=0.15)
-
-        c_panel = VGroup(c_title, c_rows).arrange(DOWN, buff=0.25)
-        c_panel.move_to(content_center(x=-3.5, dy=1.1))
-
-        highlight = SurroundingRectangle(
-            c_rows[2], color=C_ACCENT, buff=0.08, stroke_width=3
-        )
-        c_note = th("อยู่ที่เดียวในเวลาเดียว", size=18, color=C_MUTED)
-        c_note.next_to(c_panel, DOWN, buff=0.25)
-
-        self.play(FadeIn(c_panel))
-        self.play(Create(highlight), FadeIn(c_note))
-        self.next_slide()  # --- หยุดเพื่อให้เห็นว่า Classical เลือกได้แค่ 1 จาก 4 ---
-
-        # ------ 3. QUANTUM PANEL ------
-        q_title = th("2 qubits", size=22, color=C_ACCENT)
-        q_rows = VGroup()
-        amp_labels = [r"\alpha_{00}", r"\alpha_{01}", r"\alpha_{10}", r"\alpha_{11}"]
-        for cfg, amp in zip(configs, amp_labels):
-            lhs = MathTex(cfg, color=WHITE).scale(0.75)
-            arrow = MathTex(r"\to", color=C_MUTED).scale(0.7)
-            rhs = MathTex(amp, color=C_ACCENT).scale(0.75)
-            row = VGroup(lhs, arrow, rhs).arrange(RIGHT, buff=0.15)
-            q_rows.add(row)
-        q_rows.arrange(DOWN, buff=0.15, aligned_edge=LEFT)
-
-        q_panel = VGroup(q_title, q_rows).arrange(DOWN, buff=0.25)
-        q_panel.move_to(content_center(x=3.2, dy=1.1))
-
-        q_note = VGroup(
-            th(
-                "แต่ละ state เก็บข้อมูลด้วยจำนวนเชิงซ้อนทำให้เกิดการแทรกสอดได้",
-                size=18,
-                color=C_MUTED,
-            ),
-            # MathTex(r"|\alpha_{cfg}|^2 = P(\text{collapse}\to cfg)", color=C_POS).scale(
-            #     0.65
-            # ),
-            th("เป็นไปได้หลายอย่างในเวลาเดียวกัน", size=18, color=C_MUTED),
-        ).arrange(DOWN, buff=0.15)
-        q_note.next_to(q_panel, DOWN, buff=0.25)
-
-        self.play(FadeIn(q_panel))
-        self.play(Write(q_note))
-        self.next_slide()  # --- หยุดเพื่อเปรียบเทียบ Classical vs Quantum ---
-
-        # ------ 4. PUNCHLINE (The Why) ------
-        punch = VGroup(
-            th("50 qubits → 2⁵⁰ ≈ 10¹⁵ amplitudes", size=24, color=C_POS, weight=BOLD),
-            th("classical จำลองไม่ไหว (ใช้ RAM มหาศาล)", size=22, color=C_MUTED),
-        ).arrange(DOWN, buff=0.15)
-        punch.to_edge(DOWN, buff=0.6)
-
-        self.play(Write(punch))
-        self.play(Indicate(punch[0], color=C_POS))  # เน้นย้ำตัวเลขมหาศาล
-        self.next_slide()
-
-        # ------ 5. CLEAR SCENE ------
-        # รวบรวมทุกอย่างเป็น Group เพื่อล้างหน้าจอให้สะอาด
-        all_elements = Group(setup, c_panel, highlight, c_note, q_panel, q_note, punch)
-        self.play(FadeOut(all_elements))
 
     def GroverProblem(self):
         # 1. Header & Context
